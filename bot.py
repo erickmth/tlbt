@@ -1,9 +1,16 @@
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+from flask import Flask
 import os
 
-# Pegando o token do bot pela variável de ambiente
+# Configurações do Telegram
 API_TOKEN = os.getenv('API_TOKEN')
+
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return 'Bot is running'
 
 def start(update: Update, context: CallbackContext) -> None:
     update.message.reply_text('Olá! Estou ativo e pronto para responder!')
@@ -21,16 +28,24 @@ def echo(update: Update, context: CallbackContext) -> None:
         update.message.reply_text("Recebi algo que não sei como lidar!")
 
 def main():
+    # Start the bot on a separate thread
     updater = Updater(API_TOKEN)
     dispatcher = updater.dispatcher
-
-    # Configurando comandos e mensagens
     dispatcher.add_handler(CommandHandler("start", start))
     dispatcher.add_handler(MessageHandler(Filters.all, echo))
 
-    # Iniciando o bot
     updater.start_polling()
     updater.idle()
 
 if __name__ == '__main__':
+    from threading import Thread
+
+    # Run Flask server on port 5000 (render expects an open port)
+    def run():
+        app.run(host='0.0.0.0', port=5000)
+
+    thread = Thread(target=run)
+    thread.start()
+
+    # Start bot
     main()
